@@ -187,7 +187,7 @@ func removeManifestSymlink(filePath, driverID string) {
 }
 
 func createDriverManifest(location string, driver DriverInfo) error {
-	if _, err := os.Stat(location); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := os.Stat(location); errors.Is(err, fs.ErrNotExist) {
 		if err := os.MkdirAll(location, 0755); err != nil {
 			return fmt.Errorf("error creating driver location %s: %w", location, err)
 		}
@@ -221,13 +221,13 @@ func createDriverManifest(location string, driver DriverInfo) error {
 	}
 
 	toEncode.Driver.Entrypoint = driver.Driver.Entrypoint
-	if len(driver.Driver.Shared.platformMap) > 0 {
-		toEncode.Driver.Shared = driver.Driver.Shared.platformMap
-	} else if driver.Driver.Shared.defaultPath != "" {
+	if driver.Driver.Shared.defaultPath != "" {
 		toEncode.Driver.Shared = driver.Driver.Shared.defaultPath
+	} else if len(driver.Driver.Shared.platformMap) > 0 {
+		toEncode.Driver.Shared = driver.Driver.Shared.platformMap
 	}
 
-	enc := toml.NewEncoder(f).SetIndentTables(true)
+	enc := toml.NewEncoder(f).SetIndentTables(false)
 
 	if err := enc.Encode(toEncode); err != nil {
 		return fmt.Errorf("error encoding manifest %s: %w", driver.ID, err)
