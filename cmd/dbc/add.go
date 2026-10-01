@@ -125,9 +125,12 @@ func (m addModel) Init() tea.Cmd {
 
 	return func() tea.Msg {
 		drivers, registryErr := m.getDriverRegistry()
-		if len(drivers) == 0 || registryErr != nil {
+		// If we have no drivers and there's an error, fail immediately
+		if len(drivers) == 0 && registryErr != nil {
 			return fmt.Errorf("error getting driver list: %w", registryErr)
 		}
+		// Store registry errors to use later if driver is not found
+		// We continue processing if we have some drivers
 		var registryErrors error = registryErr
 
 		p, err := driverListPath(m.Path)
@@ -144,7 +147,7 @@ func (m addModel) Init() tea.Cmd {
 
 		f, err := os.Open(p)
 		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
+			if errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("error opening driver list: %s doesn't exist\nDid you run `dbc init`?", m.Path)
 			} else {
 				return fmt.Errorf("error opening driver list at %s: %w", m.Path, err)
@@ -172,7 +175,7 @@ func (m addModel) Init() tea.Cmd {
 			}
 
 			if spec.Vers != nil {
-				spec.Vers.IncludePrerelease = !m.Pre
+				spec.Vers.IncludePrerelease = m.Pre
 				_, err = drv.GetWithConstraint(spec.Vers, config.PlatformTuple())
 				if err != nil {
 					return fmt.Errorf("error getting driver: %w", err)
@@ -213,7 +216,7 @@ func (m addModel) Init() tea.Cmd {
 				}
 				return "any"
 			}()
-			if !ok {
+			if ok {
 				result = msgStyle.Render(fmt.Sprintf("replacing existing driver %s (old constraint: %s; new constraint: %s)",
 					spec.Name, currentString, newStr)) + "\n"
 			}
@@ -234,7 +237,7 @@ func (m addModel) Init() tea.Cmd {
 			return err
 		}
 		result += "\nuse `dbc sync` to install the drivers in the list"
-		return addDoneMsg{result: result, resolvedPath: m.Path}
+		return addDoneMsg{result: result, resolvedPath: p}
 	}
 }
 
